@@ -1,0 +1,7 @@
+flask
+python-dotenv
+pydub
+ffmpeg-python
+whisper
+pyannote.audio
+wavesurfer
