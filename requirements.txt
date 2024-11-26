@@ -4,4 +4,6 @@ pydub
 ffmpeg-python
 whisper
 pyannote.audio
-wavesurfer
+torch
+requests
+openai
