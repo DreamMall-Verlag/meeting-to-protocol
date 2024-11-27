@@ -3,6 +3,7 @@
 ## Einleitung
 
 Dieses Projekt kombiniert die Leistungsfähigkeit von **PyAnnote** zur Sprecherdiarisierung und **Whisper** zur Audio-Transkription. Es wurde eine Webanwendung entwickelt, mit der Benutzer Audiodateien hochladen, analysieren und die Ergebnisse (z.B. Sprecherzuordnungen und Transkripte) visuell anzeigen lassen können. Die Anwendung ist mit Flask als Backend und einer einfachen HTML-Frontend-Benutzeroberfläche realisiert. 
+
 ## Funktionalitäten
 
 - **Audiodateien hochladen**: Benutzer können MP3- oder WAV-Dateien hochladen, die dann automatisch in das WAV-Format umgewandelt werden, falls sie im MP3-Format vorliegen.
@@ -11,6 +12,66 @@ Dieses Projekt kombiniert die Leistungsfähigkeit von **PyAnnote** zur Sprecherd
 - **Prompt generieren**: Ein strukturierter Prompt wird basierend auf den transkribierten Segmenten generiert, um eine Zusammenfassung des Meetings zu erstellen.
 - **Anbindung an HuggingFace und OpenAI**: Es gibt eine Anbindung an HuggingFace (für die Speaker-Diarisierung) und OpenAI (für die Zusammenfassung der Meetings), um modernste NLP-Modelle nutzen zu können.
 - **Protokollausgabe**: Basierend auf dem generierten Prompt wird ein strukturiertes Protokoll des Meetings erstellt. Die Zusammenfassung wird als benutzerfreundliches Meeting-Protokoll ausgegeben.
+
+## Wie man das Projekt zum Laufen bekommt
+
+Um das Projekt lokal zu starten, folgen Sie bitte diesen Schritten:
+
+1. **Repository klonen**:
+
+   ```bash
+   git clone https://github.com/ogerly/Meeting-to-Protocol.git
+   cd Meeting-to-Protocol
+   ```
+
+2. **Python-Umgebung einrichten und Abhängigkeiten installieren**:
+
+   Erstellen Sie eine virtuelle Python-Umgebung und installieren Sie die notwendigen Abhängigkeiten:
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. **Umgebungsvariablen einrichten**:
+
+   Erstellen Sie eine `.env`-Datei im Projektverzeichnis, um die notwendigen API-Schlüssel bereitzustellen:
+
+   ```
+   HUGGINGFACE_API_KEY=dein_huggingface_api_schluessel
+   OPENAI_API_KEY=dein_openai_api_schluessel
+   ```
+
+4. **FFmpeg installieren**:
+
+   Für die Audiokonvertierung wird FFmpeg benötigt. Installieren Sie FFmpeg, falls es noch nicht installiert ist:
+
+   ```bash
+   sudo apt-get install ffmpeg
+   ```
+
+5. **Anwendung starten**:
+
+   Starten Sie die Flask-Anwendung:
+
+   ```bash
+   flask run
+   ```
+
+   Alternativ können Sie auch direkt das Python-Skript ausführen:
+
+   ```bash
+   python3 meeting-to-protocol.py
+   ```
+
+   Die Anwendung wird lokal unter `http://127.0.0.1:5000` ausgeführt.
+
+6. **Nutzung der Anwendung**:
+
+   - Öffnen Sie Ihren Browser und navigieren Sie zu `http://127.0.0.1:5000`.
+   - Laden Sie eine MP3- oder WAV-Datei hoch, um die Sprecherdiarisierung und Transkription zu starten.
+   - Nachdem die Analyse abgeschlossen ist, können Sie das Meeting-Protokoll generieren.
 
 ## Technische wissenschaftliche Erklärung
 
