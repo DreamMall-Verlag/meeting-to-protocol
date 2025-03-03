@@ -6,3 +6,4 @@ texts/*
 .pdf
 .docx
 .doc
+venv/*
