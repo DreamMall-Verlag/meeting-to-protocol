@@ -4,6 +4,10 @@
 
 Dieses Projekt kombiniert die Leistungsfähigkeit von **PyAnnote** zur Sprecherdiarisierung und **Whisper** zur Audio-Transkription. Es wurde eine Webanwendung entwickelt, mit der Benutzer Audiodateien hochladen, analysieren und die Ergebnisse (z.B. Sprecherzuordnungen und Transkripte) visuell anzeigen lassen können. Die Anwendung ist mit Flask als Backend und einer einfachen HTML-Frontend-Benutzeroberfläche realisiert. 
 
+![FireShot_Capture_006_-_Meeting_Protokoll_Generator_-_127 0 0 1](https://github.com/user-attachments/assets/1c516574-4427-4fca-9fad-f7be2a3e93c6)
+
+
+
 ## Funktionalitäten
 
 - **Audiodateien hochladen**: Benutzer können MP3- oder WAV-Dateien hochladen, die dann automatisch in das WAV-Format umgewandelt werden, falls sie im MP3-Format vorliegen.
