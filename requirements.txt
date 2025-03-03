@@ -1,9 +1,18 @@
+# Pin NumPy to a compatible version first (must be <2.0)
+numpy<2.0
+
+# Core dependencies
 flask
 python-dotenv
 pydub
 ffmpeg-python
-whisper
-pyannote.audio
+openai-whisper  # Changed from whisper to openai-whisper
+
+# ML/Audio processing
 torch
+pyannote.audio
+scipy
+
+# API integrations
 requests
 openai

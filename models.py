@@ -24,4 +24,3 @@ erfasse alle:
 Transkript:
 {transcript}
 '''
-
