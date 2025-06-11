@@ -1,214 +1,290 @@
-import torch
-from pyannote.audio import Pipeline
-from dotenv import load_dotenv
+from flask import Flask, request, jsonify, send_file
 import os
-from pydub import AudioSegment
-import whisper
-from flask import Flask, request, render_template, jsonify, send_from_directory
-from werkzeug.utils import secure_filename
-import openai
+import uuid
+import threading
 import time
 import json
-import requests
-from models import MODELS 
 
-# Flask App Configuration
+# Importiere deine existierende Verarbeitungslogik
+# Beispiel: from your_processing_module import process_audio_task, get_job_status, get_job_results
+
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = './uploads'
-app.config['ALLOWED_EXTENSIONS'] = {'mp3', 'wav'}
+# Lade API Key aus Umgebungsvariable oder Konfigurationsdatei
+API_KEY = os.environ.get("MICROSERVICE_API_KEY", "your_default_secret_key") # BITTE ÄNDERN!
 
-# Load environment variables
-load_dotenv()
-HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-openai.api_key = OPENAI_API_KEY
+# --- Job-Verwaltung mit JSON-Dateien ---
+JOB_DIR = "job_data" # Oder ein anderer geeigneter Pfad
 
-# Initialize Whisper Model
-print("[INFO] Lade Whisper-Modell...")
-whisper_model = whisper.load_model("base")
-print("[INFO] Whisper-Modell erfolgreich geladen.")
+# Stelle sicher, dass das Verzeichnis für Job-Daten existiert
+os.makedirs(JOB_DIR, exist_ok=True)
 
-# Initialize PyAnnote Pipeline
-pipeline = None
-if HUGGINGFACE_API_KEY:
-    try:
-        print("[INFO] Initialisiere pyannote Pipeline...")
-        pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", use_auth_token=HUGGINGFACE_API_KEY)
-        if torch.cuda.is_available():
-            pipeline.to(torch.device("cuda"))
-            print("[INFO] Pipeline zur GPU gesendet.")
-        else:
-            print("[WARNUNG] Keine GPU gefunden. Verwende CPU.")
-    except Exception as e:
-        print(f"[ERROR] Fehler beim Laden der pyannote Pipeline: {e}")
-        print("[HINWEIS] Besuche https://huggingface.co/pyannote/speaker-diarization-3.1 und akzeptiere die Nutzungsbedingungen, falls notwendig.")
-else:
-    print("[ERROR] Kein HuggingFace API-Schlüssel gefunden. Bitte sicherstellen, dass die .env Datei korrekt ist.")
-
-# Helper function to check allowed file extensions
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
-
-@app.route('/')
-def index():
-  # Konvertiere MODELS in ein Format für das Frontend
-    frontend_models = [
-        {
-            "id": model_id,
-            "name": model_id,  # Kann später angepasst werden für benutzerfreundlichere Namen
-            "api": config["api"]
-        }
-        for model_id, config in MODELS.items()
-    ]
-    return render_template(
-        'index.html',
-        title="Meeting Protokoll Generator",
-        description="Laden Sie eine Meeting-Aufzeichnung hoch, und erstellen Sie ein strukturiertes und übersichtliches Meeting-Protokoll.",
-        models=frontend_models
-    )
-
-
-@app.route('/uploads', methods=['POST'])
-def upload():
-    if 'audio' not in request.files:
-        return jsonify({"error": "Keine Datei hochgeladen"}), 400
-
-    file = request.files['audio']
-    if file.filename == '':
-        return jsonify({"error": "Keine Datei ausgewählt"}), 400
-
-    if not allowed_file(file.filename):
-        return jsonify({"error": "Ungültiger Dateityp"}), 400
-
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
-    print(f"[INFO] Datei gespeichert unter: {filepath}")
-
-    # Convert to WAV if needed
-    if filepath.endswith('.mp3'):
+def get_job_status_from_file(job_id):
+    """Liest den Job-Status aus einer JSON-Datei."""
+    status_file = os.path.join(JOB_DIR, f"{job_id}_status.json")
+    if os.path.exists(status_file):
         try:
-            print("[INFO] Konvertiere MP3-Datei nach WAV...")
-            audio = AudioSegment.from_file(filepath, format="mp3")
-            wav_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.splitext(filename)[0]}.wav")
-            audio.export(wav_filepath, format="wav")
-            print(f"[INFO] Konvertierung abgeschlossen. WAV-Datei gespeichert unter: {wav_filepath}")
+            with open(status_file, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error reading status file {status_file}: {e}")
+            return None
+    return None
+
+def save_job_status_to_file(job_id, status_data):
+    """Speichert den Job-Status in einer JSON-Datei."""
+    status_file = os.path.join(JOB_DIR, f"{job_id}_status.json")
+    try:
+        with open(status_file, 'w') as f:
+            json.dump(status_data, f)
+    except IOError as e:
+        print(f"Error writing status file {status_file}: {e}")
+
+
+def get_job_results_from_file(job_id):
+    """Liest die Job-Ergebnisse aus einer JSON-Datei."""
+    results_file = os.path.join(JOB_DIR, f"{job_id}_results.json")
+    if os.path.exists(results_file):
+        try:
+            with open(results_file, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error reading results file {results_file}: {e}")
+            return None
+    return None
+
+def save_job_results_to_file(job_id, results_data):
+    """Speichert die Job-Ergebnisse in einer JSON-Datei."""
+    results_file = os.path.join(JOB_DIR, f"{job_id}_results.json")
+    try:
+        with open(results_file, 'w') as f:
+            json.dump(results_data, f)
+    except IOError as e:
+        print(f"Error writing results file {results_file}: {e}")
+
+# --- Ende Job-Verwaltung mit JSON-Dateien ---
+
+
+def check_api_key():
+    """Prüft den X-API-Key Header."""
+    if 'X-API-Key' not in request.headers or request.headers['X-API-Key'] != API_KEY:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    return None # Rückgabe None bedeutet, dass die Prüfung erfolgreich war
+
+# --- Middleware für API Key Prüfung ---
+@app.before_request
+def before_request_check():
+    # Prüfe API Key für die definierten API Routen
+    if request.path.startswith('/process') or request.path.startswith('/status') or request.path.startswith('/results') or request.path.startswith('/summarize'):
+         auth_error = check_api_key()
+         if auth_error:
+             return auth_error
+
+# --- HEALTH CHECK ENDPOINT (Ohne API Key) ---
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "ok", "message": "Microservice is running"})
+
+
+@app.route('/process', methods=['POST'])
+def process_audio():
+    if 'audio_file' not in request.files:
+        return jsonify({"status": "error", "message": "No audio_file part in the request"}), 400
+
+    file = request.files['audio_file']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected file"}), 400
+
+    if file:
+        job_id = str(uuid.uuid4())
+        # Temporären Dateipfad erstellen. Wichtig: Stellen Sie sicher, dass das Verzeichnis beschreibbar ist!
+        # Verwenden Sie idealerweise einen dedizierten Ordner, nicht /tmp
+        temp_audio_path = os.path.join(JOB_DIR, f"{job_id}_{file.filename}") # Speichern im Job-Verzeichnis
+
+        try:
+            file.save(temp_audio_path)
+
+            # Optional: Metadaten extrahieren
+            user_id = request.form.get('user_id')
+            project_id = request.form.get('project_id')
+            model_size = request.form.get('model_size', 'base') # Standardwert 'base'
+
+            # Job-Status initialisieren und speichern
+            initial_status = {"job_id": job_id, "status": "processing", "progress": 0, "message": "Upload successful, starting processing"}
+            save_job_status_to_file(job_id, initial_status)
+
+            # --- Hintergrundaufgabe starten ---
+            # Für Robustheit in Produktion: Celery, RQ, etc. verwenden, die eine Message Queue nutzen.
+            thread = threading.Thread(target=process_audio_background, args=(job_id, temp_audio_path, model_size))
+            thread.start()
+            # ----------------------------------
+
+            return jsonify({
+                "status": "processing_started",
+                "job_id": job_id,
+                "message": "Audio upload successful. Processing started."
+            }), 202 # 202 Accepted, da Verarbeitung im Hintergrund läuft
+
         except Exception as e:
-            return jsonify({"error": f"Fehler bei der Konvertierung: {e}"}), 500
-    else:
-        wav_filepath = filepath
+            # Fehler beim Speichern oder Starten des Jobs
+            if os.path.exists(temp_audio_path):
+                 os.remove(temp_audio_path) # Temporäre Datei löschen
 
-    return jsonify({"message": "Datei erfolgreich hochgeladen", "wav_filepath": wav_filepath, "filename": os.path.basename(wav_filepath)})
+            error_message = f"Failed to start processing: {str(e)}"
+            print(f"Error for job {job_id}: {error_message}") # Loggen
+            save_job_status_to_file(job_id, {"job_id": job_id, "status": "failed", "message": error_message}) # Status auf failed setzen
+            return jsonify({"status": "error", "message": error_message}), 500
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    data = request.json
-    wav_filepath = data.get('wav_filepath')
-
-    if not wav_filepath or not os.path.exists(wav_filepath):
-        return jsonify({"error": "Audiodatei nicht gefunden"}), 400
-
-    if pipeline is None:
-        return jsonify({"error": "Die pyannote Pipeline wurde nicht initialisiert."}), 500
+# --- Hintergrundaufgabe ---
+def process_audio_background(job_id, audio_path, model_size):
+    print(f"Starting background processing for job {job_id}")
+    # Status aktualisieren
+    save_job_status_to_file(job_id, {"job_id": job_id, "status": "processing", "progress": 5, "message": "Processing audio..."})
 
     try:
-        print(f"[INFO] Starte Diarisierung für Datei: {wav_filepath}")
-        diarization = pipeline(wav_filepath)
-        print("[INFO] Diarisierung erfolgreich abgeschlossen.")
+        # --- HIER INTEGRIEREN SIE IHRE VORHANDENE VERARBEITUNGSLOGIK ---
+        # Rufen Sie Ihre Funktionen zur Diarisierung und Transkription auf.
+        # Stellen Sie sicher, dass diese Funktionen den Pfad zur Audiodatei verwenden.
+        # Sie müssen möglicherweise Ihre bestehende Logik anpassen,
+        # um das Ergebnis im erwarteten JSON-Format zu erzeugen (siehe API-Spezifikation 4.3).
 
-        # Transkription und Segmentzuordnung
-        segments = []
-        for turn, _, speaker in diarization.itertracks(yield_label=True):
-            start = int(turn.start * 1000)  # in Millisekunden
-            end = int(turn.end * 1000)      # in Millisekunden
-            segment_audio = AudioSegment.from_file(wav_filepath)[start:end]
-            segment_path = f"./uploads/temp_segment_{speaker}_{start}_{end}.wav"
-            segment_audio.export(segment_path, format="wav")
+        # Beispiel:
+        # diarization_result = run_diarization(audio_path)
+        # transcription_result = run_transcription(audio_path, model_size)
 
-            # Transkribiere das jeweilige Segment mit Whisper
-            print(f"[INFO] Starte Transkription des Segments: {segment_path}")
-            segment_result = whisper_model.transcribe(segment_path)
-            segment_transcript = segment_result['text']
-            print(f"[INFO] Transkription abgeschlossen: {segment_transcript}")
+        # Kombinieren Sie die Ergebnisse zu Ihrem finalen Protokoll-Format
+        # final_protocol_data = combine_results(diarization_result, transcription_result)
 
-            # Speichern der Segmente und Transkripte
-            segments.append({
-                "start": turn.start,
-                "end": turn.end,
-                "speaker": speaker,
-                "transcript": segment_transcript
-            })
+        # --- Simulations-Dummy-Verarbeitung ---
+        # ERSETZEN SIE DIES DURCH IHRE ECHTE LOGIK!
+        time.sleep(10) # Simulieren Sie die Verarbeitungszeit
+        final_protocol_data = [
+            {"speaker": "SPEAKER_00", "start_time": 1.0, "end_time": 3.0, "text": "Dies ist ein Test."},
+            {"speaker": "SPEAKER_01", "start_time": 3.5, "end_time": 5.5, "text": "Okay, verstanden."}
+        ]
+        # ------------------------------------
 
-            # Lösche temporäre Datei
-            os.remove(segment_path)
+        # Ergebnisse speichern
+        results_data = {
+            "job_id": job_id,
+            "status": "completed",
+            "protocol": final_protocol_data,
+            "summary": None, # Optionale Zusammenfassung
+            "word_timestamps": False # Anpassen, falls Wort-Zeitstempel generiert werden
+        }
+        save_job_results_to_file(job_id, results_data)
+        # Status auf completed setzen
+        save_job_status_to_file(job_id, {"job_id": job_id, "status": "completed", "progress": 100, "message": "Processing completed"})
+        print(f"Background processing completed for job {job_id}")
 
-        # Rückgabe der Analyseergebnisse
-        print("[INFO] Analyse erfolgreich abgeschlossen.")
-        return jsonify({"segments": segments})
     except Exception as e:
-        print(f"[ERROR] Fehler bei der Diarisierung oder Transkription: {e}")
-        return jsonify({"error": f"Fehler bei der Diarisierung oder Transkription: {e}"}), 500
+        # Fehler während der Verarbeitung
+        error_message = f"Processing failed: {str(e)}"
+        print(f"Error during processing job {job_id}: {error_message}") # Loggen
+        # Status auf failed setzen
+        save_job_status_to_file(job_id, {"job_id": job_id, "status": "failed", "message": error_message})
+        # Keine Ergebnisse im Fehlerfall speichern
+        save_job_results_to_file(job_id, None)
 
-@app.route('/generate_summary', methods=['POST'])
-def generate_summary():
-    data = request.json
-    segments = data.get('segments')
-    model_id = data.get('model_type')
-    custom_prompt = data.get('prompt')
 
-    if not segments:
-        return jsonify({"error": "Keine Segmente zur Zusammenfassung vorhanden"}), 400
+    finally:
+        # Temporäre Audiodatei löschen
+        if os.path.exists(audio_path):
+            try:
+                os.remove(audio_path)
+                print(f"Cleaned up audio file {audio_path}")
+            except OSError as e:
+                 print(f"Error removing audio file {audio_path}: {e}")
 
-    # Hole die Modell-Konfiguration
-    if model_id not in MODELS:
-        return jsonify({"error": f"Modell {model_id} nicht gefunden"}), 400
-    
-    model_config = MODELS[model_id]
+
+@app.route('/status/<job_id>', methods=['GET'])
+def get_job_status(job_id):
+    status = get_job_status_from_file(job_id) # Aus Datei lesen
+    if status is None:
+        return jsonify({"status": "error", "message": "Job ID not found."}), 404
+    return jsonify(status)
+
+
+@app.route('/results/<job_id>', methods=['GET'])
+def get_job_results(job_id):
+    status = get_job_status_from_file(job_id) # Aus Datei lesen
+
+    if status is None:
+        return jsonify({"status": "error", "message": "Job ID not found."}), 404
+
+    if status["status"] != "completed":
+        # Job ist noch nicht fertig oder fehlgeschlagen
+        return jsonify({
+            "job_id": job_id,
+            "status": status["status"],
+            "message": "Processing not yet completed or failed."
+        }), 409 # 409 Conflict
+
+    results = get_job_results_from_file(job_id) # Aus Datei lesen
+    if results is None: # Sollte nicht passieren, wenn status="completed", aber zur Sicherheit
+         return jsonify({"job_id": job_id, "status": "error", "message": "Results not available for completed job."}), 500
+
+    return jsonify(results)
+
+@app.route('/summarize/<job_id>', methods=['POST'])
+def summarize_protocol(job_id):
+    status = get_job_status_from_file(job_id) # Aus Datei lesen
+
+    if status is None:
+        return jsonify({"status": "error", "message": "Job ID not found."}), 404
+
+    if status["status"] != "completed":
+        return jsonify({
+            "job_id": job_id,
+            "status": status["status"],
+            "message": "Cannot summarize. Processing not yet completed or failed."
+        }), 409
+
+    results = get_job_results_from_file(job_id) # Aus Datei lesen
+    if results is None or 'protocol' not in results:
+         return jsonify({"job_id": job_id, "status": "error", "message": "Protocol results not available for summarization."}), 500
+
+    # --- HIER INTEGRIEREN SIE IHRE ZUSAMMENFASSUNGSLOGIK ---
+    # Nehmen Sie den Text aus results['protocol'] und senden Sie ihn an Ihr LLM.
+    # Sie können llm_model oder prompt_instructions aus request.json lesen, falls gesendet.
 
     try:
-        if model_config['api'] == 'openai':
-            print(f"[INFO] Sende Anfrage an OpenAI (Modell: {model_id})...")
-            response = openai.ChatCompletion.create(
-                model=model_config['model_id'],
-                messages=[
-                    {"role": "system", "content": "Du bist ein hilfreicher Assistent, der Meetings zusammenfasst."},
-                    {"role": "user", "content": custom_prompt}
-                ],
-                temperature=0.7
-            )
-            summary = response.choices[0].message['content'].strip()
+        # Beispiel: text_to_summarize = " ".join([seg['text'] for seg in results['protocol']])
+        # summary_text = call_llm_for_summary(text_to_summarize, request.json.get('llm_model'), request.json.get('prompt_instructions'))
 
-        elif model_config['api'] == 'huggingface':
-            print(f"[INFO] Sende Anfrage an Hugging Face (Modell: {model_id})...")
-            headers = {
-                "Authorization": f"Bearer {HUGGINGFACE_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "inputs": custom_prompt,
-                "parameters": {
-                    "max_length": 150,
-                    "min_length": 30,
-                    "do_sample": False
-                }
-            }
-            response = requests.post(
-                f"https://api-inference.huggingface.co/models/{model_config['model_id']}",
-                headers=headers,
-                json=payload
-            )
-            response.raise_for_status()
-            summary = response.json()[0]['summary_text']
+        # --- Simulations-Dummy-Zusammenfassung ---
+        # ERSETZEN SIE DIES DURCH IHRE ECHTE LOGIK!
+        time.sleep(5) # Simulieren Sie die Zusammenfassungszeit
+        summary_text = "Dies ist eine generierte Test-Zusammenfassung des Meetings."
+        # ------------------------------------
+
+        # Speichern Sie die Zusammenfassung im Job-Ergebnis
+        # Achtung: Ergebnisse erneut aus Datei lesen, da Hintergrundaufgabe diese geändert haben könnte
+        current_results = get_job_results_from_file(job_id)
+        if current_results is not None:
+            current_results['summary'] = summary_text
+            save_job_results_to_file(job_id, current_results)
         else:
-            return jsonify({"error": f"API-Typ {model_config['api']} nicht unterstützt"}), 400
+             # Fehler: Ergebnisse verschwunden?
+             raise Exception("Job results disappeared after status was completed.")
 
-        return jsonify({"summary": summary})
+
+        return jsonify({
+            "job_id": job_id,
+            "status": "summary_completed", # Oder "processing" falls asynchron
+            "summary": summary_text,
+            "message": "Summary generated successfully."
+        }), 200
+
     except Exception as e:
-        print(f"[ERROR] Fehler bei der Zusammenfassungserstellung: {e}")
-        return jsonify({"error": str(e)}), 500
-if __name__ == '__main__':
-    app.run(debug=True)
+        error_message = f"Summary generation failed: {str(e)}"
+        print(f"Error during summarization job {job_id}: {error_message}") # Loggen
+        # Status des Jobs bleibt completed, aber Zusammenfassung fehlt oder ist null im Ergebnis
+        return jsonify({"job_id": job_id, "status": "error", "message": error_message}), 500
+
+# Die folgenden Teile (MODELS, PROMPT_TEMPLATE, HTML/JS) gehören zur ursprünglichen Web-UI und sollten für den Microservice entfernt oder ignoriert werden.
+# Wenn Sie diese für andere Zwecke benötigen, lagern Sie sie in separate Dateien aus.
+
+# MODELS = { ... } # Entfernen oder ignorieren
+# PROMPT_TEMPLATE = ''' ... ''' # Entfernen oder ignorieren
+# <!DOCTYPE html>...</html> # Entfernen oder ignorieren
