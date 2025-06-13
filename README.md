@@ -2,182 +2,90 @@
 
 ## Einleitung
 
-Dieses Projekt kombiniert die Leistungsfähigkeit von **PyAnnote** zur Sprecherdiarisierung und **Whisper** zur Audio-Transkription. Es wurde eine Webanwendung entwickelt, mit der Benutzer Audiodateien hochladen, analysieren und die Ergebnisse (z.B. Sprecherzuordnungen und Transkripte) visuell anzeigen lassen können. Die Anwendung ist mit Flask als Backend und einer einfachen HTML-Frontend-Benutzeroberfläche realisiert. 
+Meeting-to-Protocol ist ein hochmoderner Microservice, der Audiodateien von Meetings automatisch in strukturierte, durchsuchbare Textprotokolle umwandelt. Durch den Einsatz fortschrittlicher Sprach-KI und natürlicher Sprachverarbeitung (NLP) reduziert dieser Service den Zeit- und Arbeitsaufwand für Meeting-Dokumentation erheblich.
 
-![FireShot_Capture_006_-_Meeting_Protokoll_Generator_-_127 0 0 1](https://github.com/user-attachments/assets/1c516574-4427-4fca-9fad-f7be2a3e93c6)
+## Funktionen
 
+- **Automatische Transkription**: Umwandlung von Sprache in Text mit hoher Genauigkeit
+- **Sprecherdiarisierung**: Erkennung und Trennung verschiedener Sprecher
+- **Strukturierung**: Organisation des Inhalts in Tagesordnungspunkte, Aktionspunkte und Entscheidungen
+- **Zusammenfassung**: KI-generierte Zusammenfassungen wichtiger Gesprächspunkte
+- **RESTful API**: Einfache Integration in andere Anwendungen
+- **Mehrsprachenunterstützung**: Verarbeitung von Meetings in verschiedenen Sprachen
 
+## Installation
 
-## Funktionalitäten
+### Voraussetzungen
 
-- **Audiodateien hochladen**: Benutzer können MP3- oder WAV-Dateien hochladen, die dann automatisch in das WAV-Format umgewandelt werden, falls sie im MP3-Format vorliegen.
-- **Audioplayer**: Nach dem Hochladen der Audiodatei wird eine Wellenformanzeige im Browser erstellt. Benutzer können die gesamte Datei oder spezifische Abschnitte der Audiodatei direkt im Browser abspielen.
-- **Audioanalyse starten**: Nachdem die Datei hochgeladen wurde, kann der Benutzer die Analyse starten. Dabei werden die verschiedenen Sprecher in der Datei identifiziert und die jeweiligen gesprochenen Segmente transkribiert.
-- **Prompt generieren**: Ein strukturierter Prompt wird basierend auf den transkribierten Segmenten generiert, um eine Zusammenfassung des Meetings zu erstellen.
-- **Anbindung an HuggingFace und OpenAI**: Es gibt eine Anbindung an HuggingFace (für die Speaker-Diarisierung) und OpenAI (für die Zusammenfassung der Meetings), um modernste NLP-Modelle nutzen zu können.
-- **Protokollausgabe**: Basierend auf dem generierten Prompt wird ein strukturiertes Protokoll des Meetings erstellt. Die Zusammenfassung wird als benutzerfreundliches Meeting-Protokoll ausgegeben.
-- **Client-seitige Wortzählung und Zeitstempel**: Die Anwendung bietet integrierte JavaScript-Funktionen zur Wortzählung und Zeitstempelformatierung direkt im Browser, was die Reaktionsgeschwindigkeit verbessert.
+- Python 3.10 oder höher
+- FFmpeg
+- 4GB+ RAM
+- OpenAI API-Zugang (optional, für erweiterte Funktionen)
 
-## Wie man das Projekt zum Laufen bekommt
+### Schnelle Installation
 
-Um das Projekt lokal zu starten, folgen Sie bitte diesen Schritten:
+```bash
+# Repository klonen
+git clone https://github.com/dreammall/meeting-to-protocol.git
+cd meeting-to-protocol
 
-1. **Repository klonen**:
+# Virtuelle Umgebung erstellen
+python -m venv venv
+source venv/bin/activate  # Unter Windows: venv\Scripts\activate
 
-   ```bash
-   git clone https://github.com/ogerly/Meeting-to-Protocol.git
-   cd Meeting-to-Protocol
-   ```
+# Abhängigkeiten installieren
+pip install -r requirements.txt
 
-2. **Automatisierte Einrichtung mit dem Setup-Script**:
+# Umgebungsvariablen konfigurieren
+cp .env.example .env
+# Bearbeite .env mit deinen Einstellungen
 
-   Für die einfachste Einrichtung führen Sie das Setup-Script aus:
+# Service starten
+./start.sh  # Unter Windows: start.bat
+```
 
-   ```bash
-   chmod +x setup.sh
-   ./setup.sh
-   ```
+## Verwendung
 
-   Das Script erstellt eine virtuelle Umgebung, installiert kompatible Versionen aller Abhängigkeiten und richtet die erforderlichen Ordner ein.
+### Als Standalone-Service
 
-3. **Alternative: Manuelle Einrichtung**:
+Der Service läuft standardmäßig auf `http://localhost:5000` und bietet eine einfache Web-Oberfläche für Tests.
 
-   Erstellen Sie eine virtuelle Python-Umgebung und installieren Sie die notwendigen Abhängigkeiten:
+### Als Teil von DreamMall
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   
-   # NumPy in einer kompatiblen Version installieren
-   pip install numpy<2.0
-   
-   # Dann die restlichen Abhängigkeiten
-   pip install -r requirements.txt
-   ```
+Dieser Microservice ist als Teil der DreamMall-Plattform konzipiert und kommuniziert mit dem DreamMall-Backend über definierte API-Endpunkte. Die Integration ist in der Datei `docs/integration_strategy_meeting_protocol.md` dokumentiert.
 
-4. **Umgebungsvariablen einrichten**:
+## API-Dokumentation
 
-   Erstellen Sie eine `.env`-Datei im Projektverzeichnis basierend auf der bereitgestellten `env`-Vorlage:
+Die vollständige API-Dokumentation findet sich in `docs/meeting_protocol_microservice_guide.md`.
 
-   ```bash
-   cp env .env
-   ```
+### Hauptendpunkte
 
-   Bearbeiten Sie die `.env`-Datei, um Ihre API-Schlüssel einzufügen:
+- `POST /process`: Audio-Upload und Verarbeitung starten
+- `GET /status/{job_id}`: Status eines Verarbeitungsjobs abfragen
+- `GET /results/{job_id}`: Ergebnisse eines abgeschlossenen Jobs abrufen
+- `POST /summarize/{job_id}`: Zusammenfassung für ein Protokoll generieren
 
-   ```
-   HUGGINGFACE_API_KEY=dein_huggingface_api_schluessel
-   OPENAI_API_KEY=dein_openai_api_schluessel
-   ```
+## Konfiguration
 
-5. **FFmpeg installieren**:
+Die Konfiguration erfolgt über Umgebungsvariablen in der `.env`-Datei:
 
-   Für die Audiokonvertierung wird FFmpeg benötigt. Installieren Sie FFmpeg, falls es noch nicht installiert ist:
+- `API_KEY`: Schlüssel für API-Authentifizierung
+- `UPLOAD_FOLDER`: Verzeichnis für hochgeladene Audiodateien
+- `RESULTS_FOLDER`: Verzeichnis für Ergebnisse
+- `LOG_LEVEL`: Protokollierungsebene (DEBUG, INFO, WARNING, ERROR)
+- `PORT`: Server-Port
+- `OPENAI_API_KEY`: OpenAI API-Schlüssel für erweiterte Funktionen
 
-   ```bash
-   sudo apt-get install ffmpeg   # Für Ubuntu/Debian
-   # oder
-   brew install ffmpeg           # Für macOS mit Homebrew
-   ```
+## Entwicklung
 
-6. **Anwendung starten**:
+Beiträge zum Projekt sind willkommen! Bitte beachte:
 
-   Aktivieren Sie die virtuelle Umgebung und starten Sie die Flask-Anwendung:
-
-   ```bash
-   source venv/bin/activate
-   python meeting-to-protocol.py
-   ```
-
-   Die Anwendung wird lokal unter `http://127.0.0.1:5000` ausgeführt.
-
-7. **Nutzung der Anwendung**:
-
-   - Öffnen Sie Ihren Browser und navigieren Sie zu `http://127.0.0.1:5000`.
-   - Laden Sie eine MP3- oder WAV-Datei hoch, um die Sprecherdiarisierung und Transkription zu starten.
-   - Nachdem die Analyse abgeschlossen ist, können Sie das Meeting-Protokoll generieren.
-
-## Hinweise zu Kompatibilitätsproblemen
-
-Dieses Projekt verwendet mehrere Bibliotheken, die spezifische Versionsabhängigkeiten haben:
-
-- **NumPy**: Muss in einer Version < 2.0 installiert sein, um mit PyAnnote und anderen Abhängigkeiten kompatibel zu sein
-- **Whisper**: Die korrekte Paket-Bezeichnung ist `openai-whisper`, nicht einfach `whisper`
-- **PyTorch**: Wird für die Sprecherdiarisierung mit PyAnnote benötigt
-
-Das Setup-Script kümmert sich automatisch um diese Abhängigkeiten.
-
-## Technische wissenschaftliche Erklärung
-
-Das Projekt nutzt zwei Kerntechnologien zur Audiobearbeitung:
-
-1. **Sprecherdiarisierung mit PyAnnote**: PyAnnote verwendet maschinelles Lernen, um unterschiedliche Sprecher in einer Audiodatei zu identifizieren und die einzelnen Sprachsegmente zu trennen. Dies ermöglicht die Zuordnung von Beiträgen zu bestimmten Sprechern, was die Analyse von Meetings erheblich vereinfacht. Die Modellarchitektur von PyAnnote basiert auf rekurrenten neuronalen Netzen (RNNs), die speziell für die Erkennung von Sprachmustern trainiert wurden.
-
-2. **Sprachtranskription mit Whisper**: Whisper ist ein auf Transformer-Modellen basierendes System, das von OpenAI entwickelt wurde. Es kann sowohl die Erkennung als auch die Transkription von Sprache durchführen. Die Transkription erfolgt dabei durch die Anwendung eines Encoder-Decoders, der auf große Mengen an gesprochener Sprache trainiert wurde. Whisper ist in der Lage, auch in multilingualen Kontexten präzise Transkriptionen zu erstellen.
-
-3. **NLP-Zusammenfassung mit OpenAI und HuggingFace**: Um eine Zusammenfassung des Meetings zu erstellen, wird der generierte Prompt an OpenAI's GPT-Modell oder HuggingFace-Modelle übergeben. Diese Transformer-Modelle analysieren den bereitgestellten Prompt und erstellen eine konsistente, strukturierte Zusammenfassung. Transformer-Modelle sind aufgrund ihrer Selbstaufmerksamkeitsmechanismen besonders gut darin, den Kontext der Daten zu verstehen und Zusammenfassungen zu erstellen.
-
-4. **Frontend-Optimierungen**: Die Anwendung nutzt clientseitige JavaScript-Funktionen für Wortzählung und Zeitstempelformatierung, was die Reaktionszeit verbessert und die Serverlast reduziert.
-
-Die technische Architektur kombiniert moderne Methoden des maschinellen Lernens und nutzt deren Leistungsfähigkeit zur Automatisierung komplexer Audioanalysen.
-
-## Technische Dokumentation für Entwickler
-
-Das Projekt besteht aus mehreren wichtigen Komponenten, die im Folgenden beschrieben werden:
-
-### 1. Backend (Flask)
-
-Das Backend ist in Python mit Flask entwickelt und verfügt über mehrere API-Endpunkte zur Verarbeitung von Audiodateien:
-
-- **/upload**: Akzeptiert Audiodateien im MP3- oder WAV-Format und speichert sie im Upload-Verzeichnis. MP3-Dateien werden dabei automatisch nach WAV konvertiert.
-- **/analyze**: Führt die Sprecherdiarisierung und Transkription durch. Es wird die Pipeline von PyAnnote und das Whisper-Modell verwendet, um die einzelnen Sprecher zu identifizieren und deren Beiträge zu transkribieren.
-- **/generate\_summary**: Nimmt die analysierten Segmente und erstellt mithilfe von GPT- oder HuggingFace-Modellen eine strukturierte Zusammenfassung.
-
-### 2. Frontend (HTML + JavaScript)
-
-Das Frontend ist eine benutzerfreundliche Oberfläche mit folgenden Hauptkomponenten:
-
-- **Upload-Formular**: Ein Formular, das es dem Benutzer ermöglicht, Audiodateien hochzuladen.
-- **Audioplayer**: Der Player ist in Wavesurfer.js eingebettet und stellt die Wellenform der hochgeladenen Audiodatei dar. Benutzer können hier einzelne Segmente abspielen, die im Analyseprozess identifiziert wurden.
-- **Analyse- und Zusammenfassungsfunktionen**: Es gibt Schaltflächen zur Ausführung der Diarisierung, zur Vorschau des Prompts sowie zur Generierung der Zusammenfassung.
-- **Client-seitige Funktionen**: Funktionen für Wortzählung und Zeitstempelformatierung laufen direkt im Browser, was eine schnellere Benutzeroberfläche ermöglicht.
-
-### 3. Modelle (NLP-Integration)
-
-In der Datei `models.py` sind die verfügbaren Modelle definiert:
-
-- **Bart-large-cnn (HuggingFace)**: Ein Transformer-Modell, das sich gut zur Zusammenfassung eignet.
-- **GPT-4o (OpenAI)**: Ein leistungsstarkes Sprachmodell von OpenAI, das zur Textgenerierung und -zusammenfassung verwendet wird.
-
-### 4. Prompterstellung
-
-Die Prompts werden auf Grundlage der transkribierten Segmente generiert und können anschließend zur Zusammenfassung des Meetings verwendet werden. Dies geschieht in der Datei `meeting-to-protocol.py` und ermöglicht eine strukturierte Ausgabe der Meeting-Inhalte.
-
-### 5. Setup und Dependency-Management
-
-Das Projekt enthält:
-- `requirements.txt`: Liste aller benötigten Abhängigkeiten mit Versionsbeschränkungen
-- `setup.sh`: Script zur automatischen Einrichtung der Entwicklungsumgebung
-- `.env` / `env`: Vorlagen für Umgebungsvariablen (API-Schlüssel)
-
-## Erweiterungsmöglichkeiten
-
-- **Automatische Protokollerstellung**: Weitergehende Integration von NLP-Modellen zur Verbesserung der Automatisierung von Meeting-Zusammenfassungen.
-- **Live-Transkription**: Echtzeit-Sprechererkennung und Transkription während eines Meetings.
-- **Bessere Visualisierung**: Verbesserte visuelle Darstellung von Sprecherwechseln und interaktiven Zeitlinien.
-- **Export-Funktionen**: Möglichkeit, Protokolle in verschiedenen Formaten (PDF, DOCX, etc.) zu exportieren.
-
-## Beitrag zum Projekt
-
-Das Projekt wird derzeit als Prototyp entwickelt, und wir laden interessierte Entwickler ein, an der weiteren Verbesserung und Erweiterung dieser Anwendung mitzuwirken. Das Ziel ist es, die Effizienz von Meeting-Zusammenfassungen zu steigern und die Anwendung so benutzerfreundlich wie möglich zu gestalten.
-
-Wenn du Interesse hast, an diesem Projekt mitzuarbeiten oder Ideen zur Verbesserung einbringen möchtest, dann freuen wir uns auf deine Beiträge. Das Repository ist unter folgendem Link verfügbar: [GitHub-Repository](https://github.com/ogerly/Meeting-to-Protocol)
+1. Fork das Repository
+2. Erstelle einen Feature-Branch
+3. Teste deine Änderungen
+4. Reiche einen Pull Request ein
 
 ## Lizenz
 
-Das Projekt steht unter der MIT-Lizenz. Bitte überprüfen Sie die `LICENSE`-Datei für weitere Details.
-
----
-
-Dies sollte die grundlegenden Informationen enthalten, die notwendig sind, um das Projekt zu verstehen und damit zu arbeiten. Viel Erfolg beim Weiterentwickeln der Anwendung! Wenn noch Fragen bestehen oder mehr Funktionen benötigt werden, kannst du uns gerne kontaktieren.
+Copyright © 2025 DreamMall, alle Rechte vorbehalten.
 

@@ -1,185 +1,284 @@
-halt des neuen Dokuments (Entwurf):
-
-# DreamMall Microservice Guide: Meeting-to-Protocol
-
-## 1. Einführung
-
-Dieses Dokument dient als technischer Leitfaden für den Meeting-to-Protocol Microservice, der in die DreamMall-Plattform integriert wird. Es richtet sich primär an DreamMall-Entwickler, die diesen Dienst in das Backend und Frontend integrieren und nutzen wollen.
-
-Der Microservice basiert auf der ursprünglichen Python-Anwendung [Meeting-to-Protocol](https://github.com/ogerly/Meeting-to-Protocol) und wurde angepasst, um als eigenständiger, über eine RESTful API ansprechbarer Dienst zu agieren. Seine Hauptaufgabe ist die **automatisierte Verarbeitung von Audioaufzeichnungen von Meetings zur Erstellung strukturierter Protokolle**, einschließlich Sprecherdiarisierung und Transkription. Eine optionale Zusammenfassungsfunktion ist ebenfalls verfügbar.
-
-## 2. Funktionsweise des Microservice
-
-Der Meeting-to-Protocol Microservice arbeitet wie folgt:
-
-1.  **Audio-Upload:** Das DreamMall-Backend sendet eine Audioaufnahme eines Meetings (MP3 oder WAV) per HTTP-POST-Anfrage an den Microservice.
-2.  **Job-Initiierung:** Der Microservice nimmt die Datei entgegen, speichert sie temporär und startet einen **asynchronen Verarbeitungsprozess** für diese Datei. Sofort danach antwortet der Microservice dem DreamMall-Backend mit einer eindeutigen **Job-ID** und dem Status, dass die Verarbeitung gestartet wurde (HTTP 202 Accepted).
-3.  **Hintergrundverarbeitung:** Im Hintergrund führt der Microservice die rechenintensiven Schritte durch:
-    *   **Sprecherdiarisierung (mit PyAnnote):** Identifizierung und Trennung der einzelnen Sprecher in der Audioaufnahme.
-    *   **Transkription (mit Whisper):** Umwandlung der gesprochenen Sprache in Text für jedes Sprechersegment.
-    *   **Protokollerstellung:** Strukturierung der transkribierten Segmente mit Sprecherzuordnung und Zeitstempeln.
-4.  **Status-Tracking:** Das DreamMall-Backend kann den Status des Verarbeitungsprozesses jederzeit anhand der Job-ID beim Microservice abfragen.
-5.  **Ergebnisabruf:** Sobald die Hintergrundverarbeitung abgeschlossen ist, kann das DreamMall-Backend das vollständige, strukturierte Protokoll (und optional eine Zusammenfassung) anhand der Job-ID vom Microservice abrufen.
-6.  **Optional: Zusammenfassung:** Eine separate Anfrage kann an den Microservice gesendet werden, um eine Zusammenfassung des fertigen Protokolls zu generieren.
-7.  **Ergebnisspeicherung in DreamMall:** Das DreamMall-Backend speichert die finalen Protokoll- und Zusammenfassungsergebnisse in der DreamMall-Datenbank (Supabase) und verknüpft sie mit dem entsprechenden Meeting, Nutzer oder Projekt.
-
-Die asynchrone Verarbeitung ist entscheidend, da die Diarisierung und Transkription je nach Länge der Audioaufnahme und verfügbarer Serverressourcen einige Zeit in Anspruch nehmen kann.
-
-## 3. Technologie-Stack des Microservice
-
-*   **Backend Framework:** Flask (Python)
-*   **Spracherkennung (ASR):** OpenAI Whisper
-*   **Sprecherdiarisierung (SD):** PyAnnote.audio
-*   **Asynchrone Verarbeitung:** Basierend auf Threads (einfache Implementierung) oder einer Task Queue (empfohlen für Produktion, z.B. Celery). Die aktuelle Implementierung nutzt Threads und Dateibasiertes Job-Management für schnelle Integration.
-*   **Job-Management:** Aktuell rudimentär über JSON-Dateien für Status und Ergebnisse (Details siehe Abschnitt 5).
-*   **Authentifizierung:** Einfache API Key Validierung.
-
-## 4. API-Spezifikation
-
-Der Microservice stellt eine RESTful API über HTTP/S bereit. Alle Anfragen vom DreamMall-Backend müssen einen gültigen API-Schlüssel im `X-API-Key` Header enthalten.
-
-**Basis-URL:** `[Wird im Deployment festgelegt]`
-
-### 4.1 Health Check
-
-*   **Beschreibung:** Prüft, ob der Microservice läuft und erreichbar ist. Benötigt keinen API Key.
-*   **Pfad:** `/health`
-*   **Methode:** `GET`
-*   **Authentifizierung:** Nein
-*   **Antwort (HTTP 200 OK):**
-
-
-json { "status": "ok", "message": "Microservice is running" }
-
-*   **Antwort (Fehler):** Standard HTTP Fehlercodes (z.B. 500)
-
-### 4.2 Audio-Upload und Verarbeitung starten
-
-*   **Beschreibung:** Nimmt eine Audiodatei entgegen und startet den asynchronen Verarbeitungsprozess.
-*   **Pfad:** `/process`
-*   **Methode:** `POST`
-*   **Authentifizierung:** API Key erforderlich (`X-API-Key` Header)
-*   **Anfrage (Request Body - multipart/form-data):**
-    *   `audio_file`: Die hochzuladende Audiodatei (MP3 oder WAV).
-    *   `user_id` (optional): ID des DreamMall-Nutzers.
-    *   `project_id` (optional): ID des DreamMall-Projekts.
-    *   `model_size` (optional): Gewünschte Whisper-Modellgröße (`tiny`, `base`, `small`, `medium`, `large`).
-*   **Antwort (HTTP 202 Accepted):**
-
-
-json { "status": "processing_started", "job_id": "uuid-eindeutige-identifikation-des-jobs", "message": "Audio upload successful. Processing started." }
-
-*   **Antwort (HTTP 400 Bad Request):** Bei fehlender `audio_file` oder leerem Dateinamen.
-
-
-json { "status": "error", "message": "No audio_file part in the request" | "No selected file" }
-
-*   **Antwort (HTTP 401 Unauthorized):** Bei fehlendem oder falschem API Key.
-*   **Antwort (HTTP 500 Internal Server Error):** Bei Fehlern während des Dateispeicherns oder Startens des Hintergrundjobs.
-
-### 4.3 Verarbeitungsstatus abfragen
-
-*   **Beschreibung:** Fragt den aktuellen Status eines Jobs ab.
-*   **Pfad:** `/status/{job_id}`
-*   **Methode:** `GET`
-*   **Authentifizierung:** API Key erforderlich (`X-API-Key` Header)
-*   **Anfrage:** Die `job_id` ist Teil des Pfades. Keine Body-Daten.
-*   **Antwort (HTTP 200 OK):**
-
-
-json { "job_id": "...", "status": "processing" | "completed" | "failed", "progress" (optional): 0-100 (Schätzung), "message" (optional): Aktueller Status oder Fehlermeldung }
-
-*   **Antwort (HTTP 401 Unauthorized):** Bei fehlendem oder falschem API Key.
-*   **Antwort (HTTP 404 Not Found):** Wenn die `job_id` unbekannt ist.
-
-### 4.4 Verarbeitungsergebnisse abrufen
-
-*   **Beschreibung:** Ruft die vollständigen Verarbeitungsergebnisse (Protokoll) für einen abgeschlossenen Job ab.
-*   **Pfad:** `/results/{job_id}`
-*   **Methode:** `GET`
-*   **Authentifizierung:** API Key erforderlich (`X-API-Key` Header)
-*   **Anfrage:** Die `job_id` ist Teil des Pfades. Keine Body-Daten.
-*   **Antwort (HTTP 200 OK):**
-
-
-json { "job_id": "...", "status": "completed", // Sollte immer "completed" sein "protocol": [ { "speaker": "SPEAKER_XX", "start_time": float, "end_time": float, "text": "Transkribierter Text" }, // ... ], "summary" (optional): "Zusammenfassungstext...", "word_timestamps": boolean }
-
-*   **Antwort (HTTP 401 Unauthorized):** Bei fehlendem oder falschem API Key.
-*   **Antwort (HTTP 404 Not Found):** Wenn die `job_id` unbekannt ist.
-*   **Antwort (HTTP 409 Conflict):** Wenn der Job-Status nicht "completed" ist.
-
-
-json { "job_id": "...", "status": "processing" | "failed", "message": "Processing not yet completed or failed." }
-
-*   **Antwort (HTTP 500 Internal Server Error):** Wenn Ergebnisse für einen abgeschlossenen Job nicht gefunden werden können.
-
-### 4.5 Zusammenfassung anfordern (Optional)
-
-*   **Beschreibung:** Fordert eine Zusammenfassung für ein bereits verarbeitetes Protokoll an.
-*   **Pfad:** `/summarize/{job_id}`
-*   **Methode:** `POST`
-*   **Authentifizierung:** API Key erforderlich (`X-API-Key` Header)
-*   **Anfrage (Request Body - application/json):**
-
-
-json { "llm_model" (optional): "Gewünschtes LLM-Modell", "prompt_instructions" (optional): "Spezifische Anweisungen für die Zusammenfassung" }
-
-*   **Antwort (HTTP 200 OK oder 202 Accepted):** Kann direkt die Zusammenfassung enthalten oder den Start der asynchronen Zusammenfassung bestätigen.
-
-
-json { "job_id": "...", "status": "summary_processing_started" | "summary_completed", "summary" (optional): "Die generierte Zusammenfassung...", "message" (optional): "Summary processing started." }
-
-*   **Antwort (HTTP 401 Unauthorized):** Bei fehlendem oder falschem API Key.
-*   **Antwort (HTTP 404 Not Found):** Wenn die `job_id` unbekannt ist.
-*   **Antwort (HTTP 409 Conflict):** Wenn der Job-Status des Protokolls nicht "completed" ist.
-*   **Antwort (HTTP 500 Internal Server Error):** Bei Fehlern während der Zusammenfassungserstellung.
-
-## 5. Job-Management und Persistenz
-
-Die aktuelle Implementierung des Microservice nutzt eine **rudimentäre Dateibasis** zur Speicherung des Job-Status und der Verarbeitungsergebnisse.
-
-*   Für jeden Job wird ein Unterordner im Verzeichnis `job_data` (oder dem konfigurierten `JOB_DIR`) erstellt.
-*   Der Job-Status wird in `{job_id}_status.json` gespeichert.
-*   Die vollständigen Verarbeitungsergebnisse werden in `{job_id}_results.json` gespeichert, sobald der Job abgeschlossen ist.
-
-**Wichtiger Hinweis:** Diese Dateibasis ist für Entwicklungs- und Testzwecke gedacht und bietet eine einfache Persistenz bei Anwendungsneustarts. Für den produktiven Einsatz wird dringend empfohlen, auf eine robustere Lösung umzusteigen, wie z.B.:
-
-*   **Datenbank:** Speicherung von Job-Metadaten und Ergebnissen in einer PostgreSQL, SQLite oder einer anderen Datenbank.
-*   **Message Queue & Worker:** Einsatz einer Task Queue (wie Celery mit Redis/RabbitMQ als Broker) zur Verwaltung der Hintergrundaufgaben und zur Speicherung von Job-Status und Ergebnissen in einer geeigneten Datenbank/einem geeigneten Cache (z.B. Redis).
-
-Diese robusteren Lösungen bieten bessere Skalierbarkeit, Fehlerbehandlung und Hochverfügbarkeit.
-
-## 6. Authentifizierung
-
-Der Microservice verwendet eine einfache API Key Authentifizierung. Das DreamMall-Backend muss den konfigurierten geheimen Schlüssel im `X-API-Key` Header jeder Anfrage mitsenden (Ausnahme: `/health`).
-
-Der API Key wird über die Umgebungsvariable `MICROSERVICE_API_KEY` konfiguriert. Es ist entscheidend, dass dieser Schlüssel sicher verwaltet wird und nicht im Frontend exponiert wird.
-
-## 7. Deployment-Überlegungen
-
-*   Der Microservice muss auf einer Serverumgebung deployed werden, die Python 3.x und die benötigten Bibliotheken (PyTorch, FFmpeg etc.) unterstützt.
-*   Für eine stabile Produktion sollte ein robuster WSGI-Server (wie Gunicorn oder Waitress) anstelle des Flask-Entwicklungsservers verwendet werden.
-*   Ein Reverse Proxy (wie Nginx oder Caddy) sollte vor dem WSGI-Server platziert werden, um HTTPS zu terminieren, Lastverteilung zu ermöglichen und die statischen Dateien zu bedienen (auch wenn der Microservice primär eine API ist).
-*   Sicherstellen, dass das `JOB_DIR` Verzeichnis auf dem Server beschreibbar ist und eine Strategie zur Bereinigung alter Job-Dateien implementiert wird.
-*   Skalierungsstrategie planen: Bei hoher Last könnten zusätzliche Instanzen des Microservice hinter einem Load Balancer benötigt werden. Eine Task Queue würde hierbei die Lastverteilung der Verarbeitung erleichtern.
-
-## 8. Integration im DreamMall Backend
-
-Das DreamMall Backend wird als Client für diesen Microservice agieren. Die Implementierung im Node.js Backend umfasst:
-
-*   Verwendung eines HTTP-Clients (`axios`, `node-fetch`).
-*   Konfiguration der Microservice Basis-URL und des API Key (über Umgebungsvariablen).
-*   Implementierung von Proxy-Endpunkten, die Anfragen vom DreamMall Frontend an den Microservice weiterleiten.
-*   Handling der asynchronen Natur des Microservice: Anfragen an `/process` führen zur Speicherung der `job_id` in der DreamMall DB, und separate Logik zur Abfrage von `/status` und `/results` wird benötigt.
-*   Speicherung der finalen Protokoll- und Zusammenfassungsergebnisse in der DreamMall Supabase-Datenbank.
-*   Robuste Fehlerbehandlung für API-Aufrufe an den Microservice.
-
-## 9. Integration im DreamMall Frontend
-
-Das DreamMall Frontend (Vue.js) wird UI-Komponenten für:
-
-*   Das Hochladen von Audiodateien an das DreamMall Backend (das dann an den Microservice weiterleitet).
-*   Die Anzeige des Verarbeitungsstatus basierend auf den Informationen aus dem DreamMall Backend.
-*   Die Darstellung des fertigen strukturierten Protokolls und der optionalen Zusammenfassung.
+<!-- filepath: d:\Entwicklung\Projekte\DREAMMALL\luna-1\meeting-to-protocol\docs\meeting_protocol_microservice_guide.md -->
+<!--
+@LLMDOC
+{
+  "description": "Anleitung für die Installation, Konfiguration und Verwendung des Meeting-to-Protocol Microservices",
+  "version": "1.0.0",
+  "date": "2025-06-14",
+  "tags": ["microservice", "meeting-protocol", "installation", "konfiguration", "api", "whisper"]
+}
+-->
+
+# Meeting-Protocol Microservice Guide
+
+## Einführung
+
+Der Meeting-to-Protocol Microservice ist ein spezialisierter Service zum Konvertieren von Audio-Aufnahmen in strukturierte Meeting-Protokolle. Er verwendet moderne KI-Technologien wie OpenAI Whisper für die Transkription und LLMs für die Strukturierung und Zusammenfassung von Inhalten.
+
+Dieser Guide behandelt die Installation, Konfiguration und Verwendung des Microservices.
+
+## Voraussetzungen
+
+- Python 3.10 oder höher
+- FFmpeg installiert und im PATH
+- 4 GB RAM oder mehr
+- 10 GB freier Festplattenspeicher
+- Internet-Verbindung für OpenAI API-Zugriff
+- Docker (optional, aber empfohlen)
+
+## Installation
+
+### Standard-Installation (lokal)
+
+1. Repository klonen:
+   ```bash
+   git clone https://github.com/dreammall/meeting-to-protocol.git
+   cd meeting-to-protocol
+   ```
+
+2. Virtuelle Umgebung erstellen und aktivieren:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Unter Windows: venv\Scripts\activate
+   ```
+
+3. Abhängigkeiten installieren:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Umgebungsvariablen konfigurieren:
+   Kopiere die Datei `.env.example` nach `.env` und passe die Werte an, insbesondere den `API_KEY` für die Authentifizierung.
+
+5. Start des Services:
+   ```bash
+   ./start.sh  # Unter Windows: start.bat
+   ```
+
+### Docker-Installation
+
+1. Docker-Image bauen:
+   ```bash
+   docker build -t dreammall/meeting-protocol:latest .
+   ```
+
+2. Container starten:
+   ```bash
+   docker run -p 5000:5000 --env-file .env -v ./uploads:/app/uploads \
+     -v ./results:/app/results -v ./logs:/app/logs \
+     dreammall/meeting-protocol:latest
+   ```
+
+## Projektstruktur
+
+```
+meeting-to-protocol/
+├── app.py                # Haupt-Flask-Anwendung
+├── processing.py         # Audio- und Transkriptionsverarbeitung
+├── models.py             # Datenmodelle
+├── requirements.txt      # Python-Abhängigkeiten
+├── start.sh             # Startskript
+├── .env                 # Umgebungsvariablen
+├── .gitignore           # Git-Ignore-Datei
+├── uploads/             # Temporärer Speicher für hochgeladene Audiodateien
+├── results/             # Temporärer Speicher für Transkriptionsergebnisse
+├── logs/                # Logdateien
+└── templates/           # HTML-Templates für einfache Weboberfläche
+```
+
+## Konfiguration
+
+### Umgebungsvariablen
+
+Die Datei `.env` enthält folgende Konfigurationsoptionen:
+
+| Variable | Beschreibung | Standardwert |
+|----------|--------------|--------------|
+| `API_KEY` | API-Schlüssel für Authentifizierung | `dreammall_secret_key_123` |
+| `UPLOAD_FOLDER` | Pfad zum Speichern von Uploads | `./uploads` |
+| `RESULTS_FOLDER` | Pfad zum Speichern von Ergebnissen | `./results` |
+| `LOG_LEVEL` | Protokollierungsebene | `INFO` |
+| `PORT` | Port, auf dem der Server läuft | `5000` |
+| `HOST` | Host zum Binden des Servers | `0.0.0.0` |
+| `OPENAI_API_KEY` | OpenAI API-Schlüssel | - |
+| `MAX_AUDIO_SIZE_MB` | Maximale Audio-Dateigröße in MB | `100` |
+
+### Logging
+
+Logs werden in der Datei `logs/microservice.log` gespeichert. Die Konfiguration kann in `app.py` angepasst werden.
+
+## API-Endpoints
+
+### 1. Audio verarbeiten
+
+```
+POST /process
+```
+
+**Headers:**
+- `X-API-Key`: Der API-Schlüssel zur Authentifizierung
+
+**Body (multipart/form-data):**
+- `audio_file`: Audio-Datei (MP3, WAV, M4A, etc.)
+- `user_id`: Benutzer-ID
+- `project_id`: Projekt-ID (optional)
+- `model_size`: Whisper-Modellgröße (tiny, base, small, medium, large)
+
+**Antwort:**
+```json
+{
+  "status": "processing_started",
+  "job_id": "67924048-a921-4633-99a7-c346d82003e9",
+  "message": "Audio upload successful. Processing started."
+}
+```
+
+### 2. Status abrufen
+
+```
+GET /status/{job_id}
+```
+
+**Headers:**
+- `X-API-Key`: Der API-Schlüssel zur Authentifizierung
+
+**Antwort:**
+```json
+{
+  "job_id": "67924048-a921-4633-99a7-c346d82003e9",
+  "status": "processing",
+  "message": "Transcribing audio",
+  "progress": 60,
+  "updated_at": "2025-06-12T16:20:42.756610"
+}
+```
+
+### 3. Ergebnisse abrufen
+
+```
+GET /results/{job_id}
+```
+
+**Headers:**
+- `X-API-Key`: Der API-Schlüssel zur Authentifizierung
+
+**Antwort:**
+```json
+{
+  "job_id": "67924048-a921-4633-99a7-c346d82003e9",
+  "status": "completed",
+  "protocol": {
+    "metadata": { ... },
+    "segments": [ ... ],
+    "agenda_items": [ ... ],
+    "action_items": [ ... ],
+    "decisions": [ ... ]
+  },
+  "completed_at": "2025-06-12T16:25:42.756610"
+}
+```
+
+### 4. Zusammenfassung generieren
+
+```
+POST /summarize/{job_id}
+```
+
+**Headers:**
+- `X-API-Key`: Der API-Schlüssel zur Authentifizierung
+
+**Body (JSON):**
+```json
+{
+  "llm_model": "gpt-4o"  // Optionales Modell für die Zusammenfassung
+}
+```
+
+**Antwort:**
+```json
+{
+  "job_id": "67924048-a921-4633-99a7-c346d82003e9",
+  "summary": "Dieses Meeting behandelte hauptsächlich die Projektplanung für Q3 mit Fokus auf neue Produktfeatures..."
+}
+```
+
+### 5. Gesundheitsstatus
+
+```
+GET /health
+```
+
+**Antwort:**
+```json
+{
+  "status": "ok",
+  "version": "1.0.0",
+  "uptime": "2d 4h 12m"
+}
+```
+
+## Integration mit DreamMall
+
+Der Microservice wird von der DreamMall-Backend-Anwendung angesprochen. Das Backend übernimmt:
+
+1. Authentifizierung und Autorisierung von Benutzern
+2. Speicherung von Protokollen in der Supabase-Datenbank
+3. Verwaltung von Benutzer- und Projektzuordnungen
+4. Kommunikation mit dem Frontend
+
+Die Integration ist in der Datei `integration_strategy_meeting_protocol.md` detailliert beschrieben.
+
+## Fehlerbehebung
+
+### Typische Probleme und Lösungen
+
+| Problem | Mögliche Ursache | Lösung |
+|---------|------------------|--------|
+| 401 Unauthorized | Falscher API-Schlüssel | API-Schlüssel in `.env` und Backend überprüfen |
+| 413 Payload Too Large | Audio-Datei zu groß | `MAX_AUDIO_SIZE_MB` erhöhen oder Datei komprimieren |
+| Transkriptionsfehler | Schlechte Audioqualität | Audio verbessern oder anderes Whisper-Modell wählen |
+| Dienst startet nicht | Fehlende Abhängigkeiten | `pip install -r requirements.txt` erneut ausführen |
+| FFmpeg-Fehler | FFmpeg nicht installiert | FFmpeg installieren und im PATH verfügbar machen |
+
+### Log-Dateien
+
+Bei Problemen prüfe die Log-Datei `logs/microservice.log` für detaillierte Fehlermeldungen.
+
+## Best Practices
+
+1. **Modellgröße auswählen**: 
+   - `tiny`: Schnell, aber weniger genau. Gut für kurze Tests.
+   - `base`: Ausgewogenes Verhältnis zwischen Geschwindigkeit und Genauigkeit.
+   - `small`, `medium`: Höhere Genauigkeit für wichtige Meetings.
+   - `large`: Höchste Genauigkeit, aber langsamste Verarbeitung.
+
+2. **Audio-Qualität**:
+   - Verwende hochwertige Aufnahmen, möglichst ohne Hintergrundgeräusche.
+   - Ideale Formate sind WAV oder MP3 mit mindestens 128 kbps.
+
+3. **Monitoring**:
+   - Überwache den Speicherplatz im `uploads/` und `results/` Verzeichnis.
+   - Prüfe regelmäßig die Log-Dateien auf Fehler oder Warnungen.
+
+## Sicherheitshinweise
+
+1. Der API-Schlüssel sollte sicher aufbewahrt und regelmäßig gewechselt werden.
+2. Audiodateien werden nach der Verarbeitung automatisch gelöscht.
+3. Der Microservice sollte hinter einer sicheren Firewall betrieben werden.
+4. In Produktionsumgebungen sollte HTTPS verwendet werden.
+
+## Skalierung
+
+Für höhere Last kann der Service horizontal skaliert werden:
+
+1. **Load Balancer**: Mehrere Instanzen hinter einem Load Balancer betreiben.
+2. **Job Queue**: RabbitMQ oder Redis für die Auftragsverwaltung einsetzen.
+3. **Container Orchestrierung**: Kubernetes für automatische Skalierung verwenden.
+
+## Support und Weiterentwicklung
+
+- Bug-Reports und Feature-Requests über das GitHub-Issue-System
+- Regelmäßige Updates für neue Whisper-Modelle und verbesserte NLP-Funktionen
+- Kontakt: support@dreammall.de
 
 

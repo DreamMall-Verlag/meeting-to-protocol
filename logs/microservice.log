@@ -1,0 +1,85 @@
+2025-06-12 16:17:06,980 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-12 16:17:07,016 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-12 16:17:07,017 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-12 16:17:07,019 - werkzeug - INFO -  * Restarting with stat
+2025-06-12 16:17:07,364 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-12 16:17:07,397 - werkzeug - WARNING -  * Debugger is active!
+2025-06-12 16:17:07,403 - werkzeug - INFO -  * Debugger PIN: 994-835-306
+2025-06-12 16:17:16,289 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:17:16] "[31m[1mGET / HTTP/1.1[0m" 401 -
+2025-06-12 16:17:17,394 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:17:17] "[31m[1mGET /favicon.ico HTTP/1.1[0m" 401 -
+2025-06-12 16:19:19,495 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:19:19] "[31m[1mGET / HTTP/1.1[0m" 401 -
+2025-06-12 16:19:20,655 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:19:20] "[31m[1mGET /favicon.ico HTTP/1.1[0m" 401 -
+2025-06-12 16:19:26,198 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:19:26] "[31m[1mGET /healt HTTP/1.1[0m" 401 -
+2025-06-12 16:19:26,690 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:19:26] "[31m[1mGET /favicon.ico HTTP/1.1[0m" 401 -
+2025-06-12 16:19:42,756 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:19:42] "GET /health HTTP/1.1" 200 -
+2025-06-12 16:19:43,041 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:19:43] "[31m[1mGET /favicon.ico HTTP/1.1[0m" 401 -
+2025-06-12 16:21:59,274 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:21:59] "[31m[1mPOST /process HTTP/1.1[0m" 401 -
+2025-06-12 16:22:43,497 - werkzeug - INFO -  * Detected change in '/mnt/d/Entwicklung/Projekte/DREAMMALL/luna-1/meeting-to-protocol/app.py', reloading
+2025-06-12 16:22:43,514 - werkzeug - INFO -  * Restarting with stat
+2025-06-12 16:22:43,954 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-12 16:22:43,982 - werkzeug - WARNING -  * Debugger is active!
+2025-06-12 16:22:43,984 - werkzeug - INFO -  * Debugger PIN: 994-835-306
+2025-06-12 16:22:51,778 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:22:51] "[31m[1mPOST /process HTTP/1.1[0m" 401 -
+2025-06-12 16:23:17,928 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-12 16:23:17,962 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-12 16:23:17,963 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-12 16:23:17,966 - werkzeug - INFO -  * Restarting with stat
+2025-06-12 16:23:18,359 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-12 16:23:18,387 - werkzeug - WARNING -  * Debugger is active!
+2025-06-12 16:23:18,389 - werkzeug - INFO -  * Debugger PIN: 994-835-306
+2025-06-12 16:23:21,847 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:23:21] "[31m[1mPOST /process HTTP/1.1[0m" 401 -
+2025-06-12 16:24:02,285 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:24:02] "[31m[1mGET /process HTTP/1.1[0m" 401 -
+2025-06-12 16:24:03,305 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:24:03] "[31m[1mGET /favicon.ico HTTP/1.1[0m" 401 -
+2025-06-12 16:24:06,320 - protocol-microservice - INFO - Received audio upload - job_id=67924048-a921-4633-99a7-c346d82003e9, user_id=test_user, project_id=none
+2025-06-12 16:24:06,330 - protocol-microservice - INFO - Starting audio processing for job 67924048-a921-4633-99a7-c346d82003e9
+2025-06-12 16:24:06,330 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:24:06] "[35m[1mPOST /process HTTP/1.1[0m" 202 -
+2025-06-12 16:24:06,350 - protocol-microservice - INFO - Audio processing completed for job 67924048-a921-4633-99a7-c346d82003e9
+2025-06-12 16:24:06,353 - protocol-microservice - INFO - Removed audio file for job 67924048-a921-4633-99a7-c346d82003e9
+2025-06-12 16:38:40,757 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:38:40] "GET /results/67924048-a921-4633-99a7-c346d82003e9 HTTP/1.1" 200 -
+2025-06-12 16:39:09,088 - protocol-microservice - INFO - Generating summary for job 67924048-a921-4633-99a7-c346d82003e9 using model gpt-4o
+2025-06-12 16:39:11,091 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:39:11] "POST /summarize/67924048-a921-4633-99a7-c346d82003e9 HTTP/1.1" 200 -
+2025-06-12 16:50:54,507 - protocol-microservice - INFO - Generating summary for job 67924048-a921-4633-99a7-c346d82003e9 using model gpt-4o
+2025-06-12 16:50:54,660 - werkzeug - INFO - 127.0.0.1 - - [12/Jun/2025 16:50:54] "POST /summarize/67924048-a921-4633-99a7-c346d82003e9 HTTP/1.1" 200 -
+2025-06-13 04:19:44,856 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-13 04:19:44,917 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-13 04:19:44,917 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-13 04:19:44,923 - werkzeug - INFO -  * Restarting with stat
+2025-06-13 04:19:45,257 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-13 04:19:45,283 - werkzeug - WARNING -  * Debugger is active!
+2025-06-13 04:19:45,287 - werkzeug - INFO -  * Debugger PIN: 397-351-309
+2025-06-13 07:37:38,584 - protocol-microservice - INFO - Received audio upload - job_id=32b45efb-2b29-4588-a4da-39ca5c01519f, user_id=6bf3b0ee-47ec-492b-aa33-68e00817b290, project_id=none
+2025-06-13 07:37:38,586 - protocol-microservice - INFO - Starting audio processing for job 32b45efb-2b29-4588-a4da-39ca5c01519f
+2025-06-13 07:37:38,587 - werkzeug - INFO - 127.0.0.1 - - [13/Jun/2025 07:37:38] "[35m[1mPOST /process HTTP/1.1[0m" 202 -
+2025-06-13 07:37:38,614 - protocol-microservice - INFO - Audio processing completed for job 32b45efb-2b29-4588-a4da-39ca5c01519f
+2025-06-13 07:37:38,617 - protocol-microservice - INFO - Removed audio file for job 32b45efb-2b29-4588-a4da-39ca5c01519f
+2025-06-13 10:51:42,630 - protocol-microservice - INFO - Received audio upload - job_id=b730778a-deda-4a4a-8fc3-b6ec3ba6813e, user_id=6bf3b0ee-47ec-492b-aa33-68e00817b290, project_id=none
+2025-06-13 10:51:42,632 - protocol-microservice - INFO - Starting audio processing for job b730778a-deda-4a4a-8fc3-b6ec3ba6813e
+2025-06-13 10:51:42,633 - werkzeug - INFO - 127.0.0.1 - - [13/Jun/2025 10:51:42] "[35m[1mPOST /process HTTP/1.1[0m" 202 -
+2025-06-13 10:51:42,657 - protocol-microservice - INFO - Audio processing completed for job b730778a-deda-4a4a-8fc3-b6ec3ba6813e
+2025-06-13 10:51:42,659 - protocol-microservice - INFO - Removed audio file for job b730778a-deda-4a4a-8fc3-b6ec3ba6813e
+2025-06-13 11:44:13,109 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-13 11:44:13,195 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-13 11:44:13,195 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-13 11:44:13,203 - werkzeug - INFO -  * Restarting with stat
+2025-06-13 11:44:13,598 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-13 11:44:13,625 - werkzeug - WARNING -  * Debugger is active!
+2025-06-13 11:44:13,630 - werkzeug - INFO -  * Debugger PIN: 397-351-309
+2025-06-13 11:45:51,794 - protocol-microservice - INFO - Received audio upload - job_id=cf4aec04-66ac-4e6e-95a2-2f6ef4922b21, user_id=6bf3b0ee-47ec-492b-aa33-68e00817b290, project_id=none
+2025-06-13 11:45:51,795 - protocol-microservice - INFO - Starting audio processing for job cf4aec04-66ac-4e6e-95a2-2f6ef4922b21
+2025-06-13 11:45:51,795 - werkzeug - INFO - 127.0.0.1 - - [13/Jun/2025 11:45:51] "[35m[1mPOST /process HTTP/1.1[0m" 202 -
+2025-06-13 11:45:51,830 - protocol-microservice - INFO - Audio processing completed for job cf4aec04-66ac-4e6e-95a2-2f6ef4922b21
+2025-06-13 11:45:51,832 - protocol-microservice - INFO - Removed audio file for job cf4aec04-66ac-4e6e-95a2-2f6ef4922b21
+2025-06-13 11:45:52,082 - werkzeug - INFO - 127.0.0.1 - - [13/Jun/2025 11:45:52] "GET /status/cf4aec04-66ac-4e6e-95a2-2f6ef4922b21 HTTP/1.1" 200 -
+2025-06-13 11:45:55,549 - werkzeug - INFO - 127.0.0.1 - - [13/Jun/2025 11:45:55] "GET /results/cf4aec04-66ac-4e6e-95a2-2f6ef4922b21 HTTP/1.1" 200 -

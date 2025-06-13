@@ -1,18 +1,20 @@
-# Pin NumPy to a compatible version first (must be <2.0)
-numpy<2.0
-
 # Core dependencies
-flask
-python-dotenv
-pydub
-ffmpeg-python
-openai-whisper  # Changed from whisper to openai-whisper
+numpy<2.0
+Flask>=2.3.2
+python-dotenv>=1.0.0
+pydub>=0.25.1
+ffmpeg-python>=0.2.0
 
-# ML/Audio processing
-torch
-pyannote.audio
-scipy
+# ML/Audio processing - using newer versions for Python 3.12 compatibility
+torch>=2.2.0
+torchaudio>=2.2.0
+openai-whisper>=20230314
 
-# API integrations
-requests
-openai
+# Other utilities
+Werkzeug>=2.3.6
+gunicorn>=20.1.0
+uuid>=1.30
+requests>=2.31.0
+
+# For summarization
+openai>=1.0.0
