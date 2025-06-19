@@ -83,3 +83,77 @@
 2025-06-13 11:45:51,832 - protocol-microservice - INFO - Removed audio file for job cf4aec04-66ac-4e6e-95a2-2f6ef4922b21
 2025-06-13 11:45:52,082 - werkzeug - INFO - 127.0.0.1 - - [13/Jun/2025 11:45:52] "GET /status/cf4aec04-66ac-4e6e-95a2-2f6ef4922b21 HTTP/1.1" 200 -
 2025-06-13 11:45:55,549 - werkzeug - INFO - 127.0.0.1 - - [13/Jun/2025 11:45:55] "GET /results/cf4aec04-66ac-4e6e-95a2-2f6ef4922b21 HTTP/1.1" 200 -
+2025-06-13 12:22:09,646 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-13 12:22:09,680 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-13 12:22:09,680 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-13 12:22:09,683 - werkzeug - INFO -  * Restarting with stat
+2025-06-13 12:22:10,084 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-13 12:22:10,112 - werkzeug - WARNING -  * Debugger is active!
+2025-06-13 12:22:10,114 - werkzeug - INFO -  * Debugger PIN: 397-351-309
+2025-06-14 06:28:24,310 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-14 06:28:24,394 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-14 06:28:24,394 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-14 06:28:24,400 - werkzeug - INFO -  * Restarting with stat
+2025-06-14 06:28:24,755 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-14 06:28:24,782 - werkzeug - WARNING -  * Debugger is active!
+2025-06-14 06:28:24,788 - werkzeug - INFO -  * Debugger PIN: 116-916-227
+2025-06-16 07:30:32,427 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-16 07:30:32,499 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-16 07:30:32,500 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-16 07:30:32,505 - werkzeug - INFO -  * Restarting with stat
+2025-06-16 07:30:32,904 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-16 07:30:32,928 - werkzeug - WARNING -  * Debugger is active!
+2025-06-16 07:30:32,934 - werkzeug - INFO -  * Debugger PIN: 913-628-123
+2025-06-16 08:31:21,313 - werkzeug - INFO - 127.0.0.1 - - [16/Jun/2025 08:31:21] "[31m[1mGET / HTTP/1.1[0m" 401 -
+2025-06-16 08:31:23,069 - werkzeug - INFO - 127.0.0.1 - - [16/Jun/2025 08:31:23] "[31m[1mGET /favicon.ico HTTP/1.1[0m" 401 -
+2025-06-16 08:32:34,619 - werkzeug - INFO - 127.0.0.1 - - [16/Jun/2025 08:32:34] "[31m[1mGET / HTTP/1.1[0m" 401 -
+2025-06-16 09:13:41,012 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-16 09:13:41,051 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-16 09:13:41,051 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-16 09:13:41,054 - werkzeug - INFO -  * Restarting with stat
+2025-06-16 09:13:41,741 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-16 09:13:41,786 - werkzeug - WARNING -  * Debugger is active!
+2025-06-16 09:13:41,792 - werkzeug - INFO -  * Debugger PIN: 913-628-123
+2025-06-16 19:43:27,255 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-16 19:43:27,308 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-16 19:43:27,308 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-16 19:43:27,310 - werkzeug - INFO -  * Restarting with stat
+2025-06-16 19:43:27,662 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-16 19:43:27,689 - werkzeug - WARNING -  * Debugger is active!
+2025-06-16 19:43:27,695 - werkzeug - INFO -  * Debugger PIN: 116-822-036
+2025-06-17 15:12:35,130 - werkzeug - INFO - 127.0.0.1 - - [17/Jun/2025 15:12:35] "[31m[1mGET / HTTP/1.1[0m" 401 -
+2025-06-18 07:59:47,193 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-18 07:59:47,294 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-18 07:59:47,294 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-18 07:59:47,304 - werkzeug - INFO -  * Restarting with stat
+2025-06-18 07:59:47,693 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-18 07:59:47,730 - werkzeug - WARNING -  * Debugger is active!
+2025-06-18 07:59:47,735 - werkzeug - INFO -  * Debugger PIN: 121-095-994
+2025-06-19 07:58:03,712 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-19 07:58:03,783 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.231.68:5000
+2025-06-19 07:58:03,783 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-19 07:58:03,790 - werkzeug - INFO -  * Restarting with stat
+2025-06-19 07:58:04,349 - protocol-microservice - INFO - Starting Meeting-to-Protocol microservice on 0.0.0.0:5000
+2025-06-19 07:58:04,417 - werkzeug - WARNING -  * Debugger is active!
+2025-06-19 07:58:04,420 - werkzeug - INFO -  * Debugger PIN: 121-095-994
